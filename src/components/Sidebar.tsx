@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,15 @@ import {
   Modal,
 } from 'react-native';
 import Colors from '../constants/Colors';
+import { supabase } from '../lib/supabase';
 
 interface SidebarProps {
   isVisible: boolean;
   onClose: () => void;
   onSupportPress: () => void;
   onLoginPress: () => void;
+  isLoggedIn: boolean;
+  onLogout: () => void;
 }
 
 const { width } = Dimensions.get('window');
@@ -24,11 +27,14 @@ export default function Sidebar({
   isVisible, 
   onClose,
   onSupportPress,
-  onLoginPress 
+  onLoginPress,
+  isLoggedIn,
+  onLogout
 }: SidebarProps) {
   const translateX = React.useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
+  const [userName, setUserName] = useState('');
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isVisible) {
       Animated.spring(translateX, {
         toValue: 0,
@@ -42,7 +48,41 @@ export default function Sidebar({
     }
   }, [isVisible]);
 
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchUserProfile();
+    }
+  }, [isLoggedIn]);
+
+  const fetchUserProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      if (data) {
+        setUserName(data.full_name);
+      }
+    }
+  };
+
   if (!isVisible) return null;
+
+  const menuItems = [
+    {
+      icon: '🎧',
+      text: 'Support Center',
+      onPress: onSupportPress,
+    },
+    {
+      icon: '👤',
+      text: isLoggedIn ? 'Logout' : 'Login',
+      onPress: isLoggedIn ? onLogout : onLoginPress,
+    },
+  ];
 
   return (
     <Modal
@@ -66,28 +106,23 @@ export default function Sidebar({
           ]}
         >
           <View style={styles.header}>
-            <Text style={styles.headerText}>Hi, Guest</Text>
+            <Text style={styles.headerText}>
+              {isLoggedIn ? `Welcome, ${userName}` : 'Hi, Guest'}
+            </Text>
           </View>
 
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={onSupportPress}
-          >
-            <View style={styles.iconContainer}>
-              <Text style={styles.icon}>🎧</Text>
-            </View>
-            <Text style={styles.menuText}>Support Center</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={onLoginPress}
-          >
-            <View style={styles.iconContainer}>
-              <Text style={styles.icon}>↪️</Text>
-            </View>
-            <Text style={styles.menuText}>Login</Text>
-          </TouchableOpacity>
+          {menuItems.map((item, index) => (
+            <TouchableOpacity 
+              key={index}
+              style={styles.menuItem}
+              onPress={item.onPress}
+            >
+              <View style={styles.iconContainer}>
+                <Text style={styles.icon}>{item.icon}</Text>
+              </View>
+              <Text style={styles.menuText}>{item.text}</Text>
+            </TouchableOpacity>
+          ))}
         </Animated.View>
       </View>
     </Modal>

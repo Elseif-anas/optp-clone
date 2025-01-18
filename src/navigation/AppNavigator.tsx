@@ -5,6 +5,8 @@ import HomeScreen from '../screens/HomeScreen';
 import CartScreen from '../screens/CartScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
 import Colors from '../constants/Colors';
+import LoginScreen from '../screens/LoginScreen';
+import SignupScreen from '../screens/SignupScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -47,6 +49,28 @@ export default function AppNavigator() {
           },
           headerTintColor: Colors.background,
           headerTitle: 'Checkout',
+        }}
+      />
+      <Stack.Screen 
+        name="Login" 
+        component={LoginScreen}
+        options={{
+          headerStyle: {
+            backgroundColor: Colors.primary,
+          },
+          headerTintColor: Colors.background,
+          headerTitle: 'Login',
+        }}
+      />
+      <Stack.Screen 
+        name="Signup" 
+        component={SignupScreen}
+        options={{
+          headerStyle: {
+            backgroundColor: Colors.primary,
+          },
+          headerTintColor: Colors.background,
+          headerTitle: 'Sign Up',
         }}
       />
     </Stack.Navigator>

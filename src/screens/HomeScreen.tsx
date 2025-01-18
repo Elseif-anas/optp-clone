@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,45 +18,28 @@ import { useCart } from '../context/CartContext';
 import Colors from '../constants/Colors';
 import { Product } from '../types/product';
 import { categories, products, getNewProducts, getProductsByCategory } from '../data/products';
-
-//const categories = [
-//  'New Arrival',
-//  'Deals',
-//  'Loaded Fries',
-//  'Flatbreads',
-//  'Burgers',
-//];
-
-//const products = [
-//  {
-//    id: '007',
-//    name: '007',
-//    description: "The name's Seven..007. Pure beef perfection in every bite. 7 ounces of juicy goodness, pickles, double cheese, and our classified sauce.",
-//    price: 1190,
-//    image: 'https://em-cdn.eatmubarak.pk/24/dish_image/1725956033.png',
-//    isNew: true,
-//    calories: 985,
-//  },
-//  {
-//    id: 'fish-and-chips',
-//    name: 'Fish & Chips',
-//    description: 'Fresh fish fillet, golden fried to perfection, served with our world-famous fries.',
-//    price: 1150,
-//    image: 'https://g-cdn.blinkco.io/ordering-system/24/dish_image/1729590129.png',
-//    isNew: true,
-//  },
-//];
+import { supabase } from '../lib/supabase';
 
 export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState(categories[0].id);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { items } = useCart();
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  useEffect(() => {
+    checkUserSession();
+  }, []);
+
+  const checkUserSession = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setIsLoggedIn(!!session);
+  };
 
   const handleSupportPress = () => {
     setIsSidebarVisible(false);
@@ -65,7 +48,13 @@ export default function HomeScreen() {
 
   const handleLoginPress = () => {
     setIsSidebarVisible(false);
-    // TODO: Navigate to Login
+    navigation.navigate('Login');
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setIsLoggedIn(false);
+    setIsSidebarVisible(false);
   };
 
   const renderProducts = () => {
@@ -172,6 +161,8 @@ export default function HomeScreen() {
         onClose={() => setIsSidebarVisible(false)}
         onSupportPress={handleSupportPress}
         onLoginPress={handleLoginPress}
+        isLoggedIn={isLoggedIn}
+        onLogout={handleLogout}
       />
 
       <SearchModal
@@ -248,7 +239,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: 'white',
     borderRadius: 12,
-    padding: 16,
+    padding: 30,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: {
